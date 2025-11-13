@@ -1,0 +1,154 @@
+CREATE TABLE 'public.unifiedtables' AS
+WITH split_country
+	(
+		geonameid,
+		alternatenames,
+		str
+	)
+	AS
+	(
+		SELECT
+			geonameid,
+			'',
+			alternatenames
+				||CAST(X'09'AS TEXT)
+		FROM 'public.country'
+		UNION ALL
+		SELECT
+			geonameid,
+			substr(str, 0, instr(str,CAST(X'09'AS TEXT))),
+			substr(str, instr(str, CAST(X'09'AS TEXT))+1)
+		FROM split_country
+		WHERE str !=''
+	)
+	,
+	split_levelone
+	(
+		geonameid,
+		alternatenames,
+		str
+	)
+	AS
+	(
+		SELECT
+			geonameid,
+			'',
+			alternatenames
+				||CAST(X'09'AS TEXT)
+		FROM 'public.level_one_division'
+		UNION ALL
+		SELECT
+			geonameid,
+			substr(str, 0, instr(str,CAST(X'09'AS TEXT))),
+			substr(str, instr(str, CAST(X'09'AS TEXT))+1)
+		FROM split_levelone
+		WHERE str !=''
+	)
+	,
+	split_leveltwo
+	(
+		geonameid,
+		alternatenames,
+		str
+	)
+	AS
+	(
+		SELECT
+			geonameid,
+			'',
+			alternatenames
+				||CAST(X'09'AS TEXT)
+		FROM 'public.level_two_division'
+		UNION ALL
+		SELECT
+			geonameid,
+			substr(str, 0, instr(str,CAST(X'09'AS TEXT))),
+			substr(str, instr(str, CAST(X'09'AS TEXT))+1)
+		FROM split_leveltwo
+		WHERE str !=''
+	)
+	,
+	split_locality
+	(
+		geonameid,
+		alternatenames,
+		str
+	)
+	AS
+	(
+		SELECT
+			geonameid,
+			'',
+			alternatenames
+				||CAST(X'09'AS TEXT)
+		FROM 'public.locality'
+		UNION ALL
+		SELECT
+			geonameid,
+			substr(str, 0, instr(str,CAST(X'09'AS TEXT))),
+			substr(str, instr(str, CAST(X'09'AS TEXT))+1)
+		FROM split_locality
+		WHERE str !=''
+	)
+	SELECT
+		geonameid,
+		alternatenames AS alternatename,
+		'public.country' AS tablename
+	FROM split_country
+	WHERE alternatenames != ''
+	UNION
+	SELECT
+		geonameid,
+		name AS alternatename,
+		'public.country' AS tablename
+	FROM 'public.country'
+	WHERE name != ''
+	UNION
+	SELECT
+		geonameid,
+		iso_alpha3 AS alternatename,
+		'public.country' AS tablename
+	FROM 'public.country'
+	WHERE iso_alpha3  != ''
+  UNION
+	SELECT
+		geonameid,
+		name AS alternatename,
+		'public.level_one_division' AS tablename
+	FROM 'public.level_one_division'
+	WHERE name != ''
+	UNION
+	SELECT
+		geonameid,
+		alternatenames AS alternatename,
+		'public.level_one_division' AS tablename
+	FROM split_levelone
+	WHERE alternatenames != ''
+	UNION
+	SELECT
+		geonameid,
+		name AS alternatename,
+		'public.level_two_division' AS tablename
+	FROM 'public.level_two_division'
+	WHERE name  != ''
+	UNION
+	SELECT
+		geonameid,
+		alternatenames AS alternatename,
+		'public.level_two_division' AS tablename
+	FROM split_leveltwo
+	WHERE alternatenames != ''
+	UNION
+	SELECT
+		geonameid,
+		name AS alternatename,
+		'public.locality' AS tablename
+	FROM 'public.locality'
+	WHERE name  != ''
+	UNION
+	SELECT
+		geonameid,
+		alternatenames AS alternatename,
+		'public.locality' AS tablename
+	FROM split_locality
+	WHERE alternatenames != ''
